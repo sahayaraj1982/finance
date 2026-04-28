@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Finance Manager Pro</title>
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#111;color:white;}
+.wrapper{max-width:900px;margin:auto;}
+header{background:linear-gradient(145deg,#ffd700,#b8860b);color:#111;text-align:center;padding:18px;font-size:24px;font-weight:bold;}
+.dashboard{display:flex;gap:10px;padding:10px;}
+.stat-box{flex:1;background:#222;padding:15px;border-radius:10px;text-align:center;}
+.top-buttons{text-align:center;margin:10px;}
+button{padding:8px 12px;border:none;border-radius:8px;margin:4px;cursor:pointer;font-weight:bold;}
+.gold{background:#ffd700;color:#111;}
+.green{background:#4caf50;color:white;}
+.red{background:#e53935;color:white;}
+.user-card{width:calc(100% - 30px);margin:10px auto;padding:15px;border-radius:12px;background:#222;cursor:pointer;position:relative;}
+.user-card.redbg{background:#8b0000;}
+.row{display:flex;justify-content:space-between;}
+.popup-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000;justify-content:center;align-items:center;}
+.popup-content{background:#222;padding:25px;border-radius:15px;text-align:center;border:2px solid #ffd700;min-width:250px;}
+input{width:calc(100% - 20px);margin:5px 10px;padding:10px;border:none;border-radius:8px;background:#333;color:white;}
+.hidden{display:none;}
+table{width:100%;border-collapse:collapse;margin-top:10px;}
+th,td{padding:8px;text-align:center;}
+th{background:#444;}
+.credit-row{background:#1f7a1f;}
+.debit-row{background:#8b1e1e;}
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+<header>Finance Manager Pro</header>
+
+<div id="mainScreen">
+    <div class="dashboard">
+        <div class="stat-box"><div>Total Users</div><h2 id="totalUsers">0</h2></div>
+        <div class="stat-box"><div>Total Balance</div><h2 id="totalBalance">0</h2></div>
+    </div>
+    <div class="top-buttons">
+        <button class="gold" onclick="addUser()">Add User</button>
+        <button class="gold" onclick="exportData()">Export</button>
+        <button class="gold" onclick="document.getElementById('importFile').click()">Import</button>
+        <input type="file" id="importFile" hidden onchange="importData(event)">
+    </div>
+    <div id="userList"></div>
+</div>
+
+<div id="userScreen" class="hidden">
+    <button class="gold" onclick="goBack()">← Back</button>
+    <h3 id="userTitle" style="padding:10px;"></h3>
+    <input type="date" id="tDate">
+    <input type="text" id="tDesc" placeholder="Description">
+    <input type="number" id="tCredit" placeholder="Credit">
+    <input type="number" id="tDebit" placeholder="Debit">
+    <button class="gold" onclick="saveTransaction()" style="width:95%; margin:10px;">Save Transaction</button>
+    <table>
+        <thead><tr><th>Date</th><th>Description</th><th>Credit</th><th>Debit</th><th>Balance</th></tr></thead>
+        <tbody id="transactionTable"></tbody>
+    </table>
+</div>
+</div>
+
+<div id="actionPopup" class="popup-overlay" onclick="closePopup()">
+    <div class="popup-content" onclick="event.stopPropagation()">
+        <h3 id="popupTitle" style="margin-top:0;">Select Action</h3>
+        <hr border="1" color="#444">
+        <div style="margin-top:20px;">
+            <button class="green" id="editBtn" style="width:100px; padding:10px;">Edit</button>
+            <button class="red" id="deleteBtn" style="width:100px; padding:10px;">Delete</button>
+        </div>
+        <br><button style="background:#555; color:white; width:100%;" onclick="closePopup()">Close</button>
+    </div>
+</div>
+
+<script>
+// 1. DATA INITIALIZATION
+let users = [];
+try {
+    const savedData = localStorage.getItem("financeUsers");
+    if (savedData) users = JSON.parse(savedData);
+} catch (e) {
+    console.error("Error loading data", e);
+}
+
+let currentUser = null;
+let editIndex = null;
+
+// 2. SAVE FUNCTION
+function saveLocal(){
+    localStorage.setItem("financeUsers", JSON.stringify(users));
+}
+
+// 3. UTILITIES
+function formatDate(d){
+    if(!d) return "";
+    let x = new Date(d);
+    return `${String(x.getDate()).padStart(2,'0')}-${String(x.getMonth()+1).padStart(2,'0')}-${x.getFullYear()}`;
+}
+
+function getBalance(user){
+    if(!user.transactions) return 0;
+    return user.transactions.reduce((a,t)=>a+(Number(t.credit||0)-Number(t.debit||0)), 0);
+}
+
+function duePending(user){
+    let today = new Date().toISOString().split("T")[0];
+    return user.transactions.some(t=>t.date<=today && !t.credit && !t.debit);
+}
+
+function addLongPress(el, callback){
+    let timer;
+    const start = (e) => { timer = setTimeout(() => callback(e), 700); };
+    const cancel = () => clearTimeout(timer);
+    el.addEventListener("touchstart", start);
+    el.addEventListener("touchend", cancel);
+    el.addEventListener("mousedown", start);
+    el.addEventListener("mouseup", cancel);
+}
+
+function openActionPopup(title, onEdit, onDelete) {
+    document.getElementById("popupTitle").innerText = title;
+    document.getElementById("actionPopup").style.display = "flex";
+    document.getElementById("editBtn").onclick = () => { onEdit(); closePopup(); };
+    document.getElementById("deleteBtn").onclick = () => { onDelete(); closePopup(); };
+}
+
+function closePopup() { document.getElementById("actionPopup").style.display = "none"; }
+
+// 4. USER FUNCTIONS
+function renderUsers(){
+    document.getElementById("totalUsers").innerText = users.length;
+    document.getElementById("totalBalance").innerText = users.reduce((a,u)=>a+getBalance(u),0);
+    const userList = document.getElementById("userList");
+    userList.innerHTML = "";
+
+    users.sort((a,b)=>duePending(b)-duePending(a));
+
+    users.forEach((u,i)=>{
+        let card=document.createElement("div");
+        card.className="user-card"+(duePending(u)?" redbg":"");
+        card.innerHTML=`<div class="row"><div><b>${u.name}</b><br><small>${u.mobile || ''}</small></div><div>₹ ${getBalance(u)}</div></div>`;
+        card.onclick=()=>openUser(i);
+        addLongPress(card,(e)=>{ e.stopPropagation(); openActionPopup(u.name, () => editUser(i), () => deleteUser(i)); });
+        userList.appendChild(card);
+    });
+}
+
+function addUser(){
+    let name=prompt("User Name");
+    let mobile=prompt("Mobile");
+    if(name){
+        users.push({name,mobile,transactions:[]});
+        saveLocal();
+        renderUsers();
+    }
+}
+
+function editUser(i){
+    users[i].name=prompt("Edit Name",users[i].name)||users[i].name;
+    users[i].mobile=prompt("Edit Mobile",users[i].mobile)||users[i].mobile;
+    saveLocal();
+    renderUsers();
+}
+
+function deleteUser(i){
+    if(confirm("Delete user?")){
+        users.splice(i,1);
+        saveLocal();
+        renderUsers();
+    }
+}
+
+// 5. TRANSACTION FUNCTIONS
+function openUser(i){
+    currentUser=i;
+    document.getElementById("mainScreen").classList.add("hidden");
+    document.getElementById("userScreen").classList.remove("hidden");
+    renderTransactions();
+}
+
+function goBack(){
+    document.getElementById("mainScreen").classList.remove("hidden");
+    document.getElementById("userScreen").classList.add("hidden");
+    renderUsers();
+}
+
+function saveTransaction(){
+    let dateVal = document.getElementById("tDate").value;
+    let descVal = document.getElementById("tDesc").value;
+    let creditVal = document.getElementById("tCredit").value;
+    let debitVal = document.getElementById("tDebit").value;
+
+    if(!dateVal) { alert("தேதியைத் தேர்ந்தெடுக்கவும்!"); return; }
+
+    let tx = { date: dateVal, desc: descVal, credit: creditVal, debit: debitVal };
+
+    if(editIndex === null) {
+        users[currentUser].transactions.unshift(tx);
+    } else {
+        users[currentUser].transactions[editIndex] = tx;
+        editIndex = null;
+    }
+
+    // Reset Inputs
+    document.getElementById("tDate").value = "";
+    document.getElementById("tDesc").value = "";
+    document.getElementById("tCredit").value = "";
+    document.getElementById("tDebit").value = "";
+    
+    saveLocal();
+    renderTransactions();
+}
+
+function renderTransactions(){
+    let user = users[currentUser];
+    document.getElementById("userTitle").innerText = `${user.name} | ₹${getBalance(user)}`;
+    const tableBody = document.getElementById("transactionTable");
+    tableBody.innerHTML = "";
+    let running = getBalance(user);
+
+    user.transactions.forEach((tx, i)=>{
+        let row = document.createElement("tr");
+        row.className = tx.credit ? "credit-row" : tx.debit ? "debit-row" : "";
+        let bal = "";
+        if(tx.credit || tx.debit){
+            bal = running;
+            running -= (Number(tx.credit||0) - Number(tx.debit||0));
+        }
+        row.innerHTML = `<td>${formatDate(tx.date)}</td><td>${tx.desc||""}</td><td>${tx.credit||""}</td><td>${tx.debit||""}</td><td>${bal}</td>`;
+        addLongPress(row, (e) => { openActionPopup("Transaction", () => editTransaction(i), () => deleteTransaction(i)); });
+        tableBody.appendChild(row);
+    });
+}
+
+function editTransaction(i){
+    let tx = users[currentUser].transactions[i];
+    document.getElementById("tDate").value = tx.date;
+    document.getElementById("tDesc").value = tx.desc;
+    document.getElementById("tCredit").value = tx.credit;
+    document.getElementById("tDebit").value = tx.debit;
+    editIndex = i;
+}
+
+function deleteTransaction(i){
+    if(confirm("Delete this?")){
+        users[currentUser].transactions.splice(i,1);
+        saveLocal();
+        renderTransactions();
+    }
+}
+
+// 6. IMPORT/EXPORT
+function exportData(){
+    let data="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(users));
+    let a=document.createElement("a");
+    a.href=data; a.download="finance_backup.json"; a.click();
+}
+
+function importData(event){
+    let file=event.target.files[0];
+    if(!file) return;
+    let reader=new FileReader();
+    reader.onload=function(e){
+        try {
+            users=JSON.parse(e.target.result);
+            saveLocal();
+            renderUsers();
+        } catch(err) { alert("Error reading file!"); }
+    };
+    reader.readAsText(file);
+}
+
+// Initial Run
+renderUsers();
+</script>
+</body>
+</html>
