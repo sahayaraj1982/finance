@@ -76,28 +76,18 @@ th{background:#444;}
 </div>
 
 <script>
-// 1. DATA INITIALIZATION
-let users = [];
-try {
-    const savedData = localStorage.getItem("financeUsers");
-    if (savedData) users = JSON.parse(savedData);
-} catch (e) {
-    console.error("Error loading data", e);
-}
-
+let users = JSON.parse(localStorage.getItem("financeUsers")) || [];
 let currentUser = null;
 let editIndex = null;
 
-// 2. SAVE FUNCTION
 function saveLocal(){
     localStorage.setItem("financeUsers", JSON.stringify(users));
 }
 
-// 3. UTILITIES
 function formatDate(d){
     if(!d) return "";
-    let x = new Date(d);
-    return `${String(x.getDate()).padStart(2,'0')}-${String(x.getMonth()+1).padStart(2,'0')}-${x.getFullYear()}`;
+    let parts = d.split("-");
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
 }
 
 function getBalance(user){
@@ -129,15 +119,12 @@ function openActionPopup(title, onEdit, onDelete) {
 
 function closePopup() { document.getElementById("actionPopup").style.display = "none"; }
 
-// 4. USER FUNCTIONS
 function renderUsers(){
     document.getElementById("totalUsers").innerText = users.length;
     document.getElementById("totalBalance").innerText = users.reduce((a,u)=>a+getBalance(u),0);
     const userList = document.getElementById("userList");
     userList.innerHTML = "";
-
     users.sort((a,b)=>duePending(b)-duePending(a));
-
     users.forEach((u,i)=>{
         let card=document.createElement("div");
         card.className="user-card"+(duePending(u)?" redbg":"");
@@ -173,7 +160,6 @@ function deleteUser(i){
     }
 }
 
-// 5. TRANSACTION FUNCTIONS
 function openUser(i){
     currentUser=i;
     document.getElementById("mainScreen").classList.add("hidden");
@@ -198,13 +184,12 @@ function saveTransaction(){
     let tx = { date: dateVal, desc: descVal, credit: creditVal, debit: debitVal };
 
     if(editIndex === null) {
-        users[currentUser].transactions.unshift(tx);
+        users[currentUser].transactions.push(tx);
     } else {
         users[currentUser].transactions[editIndex] = tx;
         editIndex = null;
     }
 
-    // Reset Inputs
     document.getElementById("tDate").value = "";
     document.getElementById("tDesc").value = "";
     document.getElementById("tCredit").value = "";
@@ -216,21 +201,40 @@ function saveTransaction(){
 
 function renderTransactions(){
     let user = users[currentUser];
+    
+    // தேதியை வரிசைப்படுத்துதல் (Newest first)
+    user.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
     document.getElementById("userTitle").innerText = `${user.name} | ₹${getBalance(user)}`;
     const tableBody = document.getElementById("transactionTable");
     tableBody.innerHTML = "";
-    let running = getBalance(user);
+    
+    // Balance கணக்கிட பழைய தேதியில் இருந்து வரிசைப்படுத்த வேண்டும்
+    let sortedForCalc = [...user.transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
+    let runningBalances = [];
+    let currentBal = 0;
+    sortedForCalc.forEach(tx => {
+        currentBal += (Number(tx.credit || 0) - Number(tx.debit || 0));
+        runningBalances.push({ ...tx, cumulative: currentBal });
+    });
 
-    user.transactions.forEach((tx, i)=>{
+    // சமீபத்திய தேதி முதலில் இருக்குமாறு திரையில் காட்டுதல்
+    runningBalances.reverse().forEach((tx, idx) => {
+        let originalIndex = user.transactions.indexOf(user.transactions.find(t => t === tx));
         let row = document.createElement("tr");
         row.className = tx.credit ? "credit-row" : tx.debit ? "debit-row" : "";
-        let bal = "";
-        if(tx.credit || tx.debit){
-            bal = running;
-            running -= (Number(tx.credit||0) - Number(tx.debit||0));
-        }
-        row.innerHTML = `<td>${formatDate(tx.date)}</td><td>${tx.desc||""}</td><td>${tx.credit||""}</td><td>${tx.debit||""}</td><td>${bal}</td>`;
-        addLongPress(row, (e) => { openActionPopup("Transaction", () => editTransaction(i), () => deleteTransaction(i)); });
+        
+        row.innerHTML = `<td>${formatDate(tx.date)}</td><td>${tx.desc||""}</td><td>${tx.credit||""}</td><td>${tx.debit||""}</td><td>${tx.cumulative}</td>`;
+        
+        addLongPress(row, (e) => { 
+            openActionPopup("Transaction", () => {
+                let realIdx = user.transactions.findIndex(t => t.date === tx.date && t.desc === tx.desc && t.credit === tx.credit);
+                editTransaction(realIdx);
+            }, () => {
+                let realIdx = user.transactions.findIndex(t => t.date === tx.date && t.desc === tx.desc && t.credit === tx.credit);
+                deleteTransaction(realIdx);
+            }); 
+        });
         tableBody.appendChild(row);
     });
 }
@@ -252,7 +256,6 @@ function deleteTransaction(i){
     }
 }
 
-// 6. IMPORT/EXPORT
 function exportData(){
     let data="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(users));
     let a=document.createElement("a");
@@ -273,7 +276,6 @@ function importData(event){
     reader.readAsText(file);
 }
 
-// Initial Run
 renderUsers();
 </script>
 </body>
