@@ -5,73 +5,131 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Finance Manager Pro</title>
 <style>
-body{margin:0;font-family:Arial,sans-serif;background:#111;color:white;}
-.wrapper{max-width:900px;margin:auto;}
-header{background:linear-gradient(145deg,#ffd700,#b8860b);color:#111;text-align:center;padding:18px;font-size:24px;font-weight:bold;}
-.dashboard{display:flex;gap:10px;padding:10px;}
-.stat-box{flex:1;background:#222;padding:15px;border-radius:10px;text-align:center;}
+body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:#111;color:white;}
+.wrapper{max-width:900px;margin:auto;padding-bottom: 50px;}
+header{background:linear-gradient(145deg,#ffd700,#b8860b);color:#111;text-align:center;padding:18px;font-size:24px;font-weight:bold;box-shadow: 0 4px 10px rgba(0,0,0,0.5);}
+
+/* Dashboard */
+.dashboard{display:grid;grid-template-columns: repeat(2, 1fr);gap:10px;padding:10px;}
+.stat-box{background:#222;padding:20px 10px;border-radius:10px;text-align:center;border:1px solid #333;}
+.stat-box.red-border{border: 2px solid #e53935;}
+
+/* தலைப்புகள் (Total Users, etc.) */
+.stat-box small{color: #aaa; font-size: 14px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 8px;}
+
+/* எண்கள் (16, ₹ 1,34,500, etc.) */
+.stat-box h2{margin:0; font-size: 24px; color: #ffd700; font-weight: 900;}
+
+.search-container{padding:10px;}
+.search-input{width:100%; padding:15px; border-radius:10px; border:1px solid #ffd700; background:#222; color:white; box-sizing: border-box; font-size: 18px;}
+
 .top-buttons{text-align:center;margin:10px;}
-button{padding:8px 12px;border:none;border-radius:8px;margin:4px;cursor:pointer;font-weight:bold;}
+button{padding:12px 18px;border:none;border-radius:8px;margin:4px;cursor:pointer;font-weight:bold; font-size: 15px; transition: 0.3s;}
 .gold{background:#ffd700;color:#111;}
-.green{background:#4caf50;color:white;}
-.red{background:#e53935;color:white;}
-.user-card{width:calc(100% - 30px);margin:10px auto;padding:15px;border-radius:12px;background:#222;cursor:pointer;position:relative;}
-.user-card.redbg{background:#8b0000;}
-.row{display:flex;justify-content:space-between;}
-.popup-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000;justify-content:center;align-items:center;}
-.popup-content{background:#222;padding:25px;border-radius:15px;text-align:center;border:2px solid #ffd700;min-width:250px;}
-input{width:calc(100% - 20px);margin:5px 10px;padding:10px;border:none;border-radius:8px;background:#333;color:white;}
+
+/* User Cards */
+.user-card{width:calc(100% - 24px);margin:10px auto;padding:18px;border-radius:15px;background:#222;cursor:pointer;border: 1px solid #333;box-sizing: border-box; position: relative;}
+.user-card.redbg{background:linear-gradient(145deg, #8b0000, #5a0000); border-color: #ff4444;}
+.row{display:flex;justify-content:space-between; align-items:center; font-size: 18px; padding-right: 40px;}
+
+/* Menu Button */
+.menu-dot-btn { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); background: transparent; color: gold; font-size: 24px; border: none; padding: 5px 10px; cursor: pointer; z-index: 10; }
+
+/* User Profile Section */
+.profile-header{background:#222; padding:15px 20px; border-bottom: 2px solid gold; margin-bottom: 5px;}
+.profile-header h2{margin:0 0 15px 0; color: gold; text-align: center; font-size: 28px;}
+.prof-details-row{display: flex; justify-content: space-between; align-items: center; margin-top: 10px;}
+
+#profMobile { margin: 0; font-size: 22px; color: #ffd700; font-weight: bold; }
+#profBalance { margin: 0; font-size: 24px; color: #ffffff; font-weight: 900; }
+
+/* Transaction Table */
+.table-container{overflow-x:auto; padding:10px;}
+table{width:100%;border-collapse:collapse; background: #1a1a1a; border-radius: 10px;}
+th,td{padding:12px 8px;text-align:center; border-bottom: 1px solid #444; font-size: 15px;}
+th{background:#333; color: #ffd700;}
+
+.credit-row{background-color: #1f7a1f !important; color: white !important;}
+.debit-row{background-color: #b91c1c !important; color: white !important;}
+.pending-row{background-color: #2c2c2c; color: #ffd700;}
+
+/* Popup / Entry Form */
+.popup-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:1000;justify-content:center;align-items:center;}
+.popup-content{background:#222;padding:25px;border-radius:20px;text-align:center;border:2px solid #ffd700;width:90%; max-width: 400px;}
+
+input[type="date"], input[type="text"], input[type="number"]{width:100%;margin:10px 0;padding:12px;border:none;border-radius:8px;background:#333;color:white; box-sizing: border-box; font-size: 16px;}
 .hidden{display:none;}
-table{width:100%;border-collapse:collapse;margin-top:10px;}
-th,td{padding:8px;text-align:center;}
-th{background:#444;}
-.credit-row{background:#1f7a1f;}
-.debit-row{background:#8b1e1e;}
+
+.btn-entry{background:#ffd700; color:#111; padding:15px 30px; border-radius:50px; font-size:18px; position:fixed; bottom:20px; right:20px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 99;}
 </style>
 </head>
 <body>
 
 <div class="wrapper">
-<header>Finance Manager Pro</header>
+    <header>Finance Manager Pro</header>
 
-<div id="mainScreen">
-    <div class="dashboard">
-        <div class="stat-box"><div>Total Users</div><h2 id="totalUsers">0</h2></div>
-        <div class="stat-box"><div>Total Balance</div><h2 id="totalBalance">0</h2></div>
-    </div>
-    <div class="top-buttons">
-        <button class="gold" onclick="addUser()">Add User</button>
-        <button class="gold" onclick="exportData()">Export</button>
-        <button class="gold" onclick="document.getElementById('importFile').click()">Import</button>
-        <input type="file" id="importFile" hidden onchange="importData(event)">
-    </div>
-    <div id="userList"></div>
-</div>
-
-<div id="userScreen" class="hidden">
-    <button class="gold" onclick="goBack()">← Back</button>
-    <h3 id="userTitle" style="padding:10px;"></h3>
-    <input type="date" id="tDate">
-    <input type="text" id="tDesc" placeholder="Description">
-    <input type="number" id="tCredit" placeholder="Credit">
-    <input type="number" id="tDebit" placeholder="Debit">
-    <button class="gold" onclick="saveTransaction()" style="width:95%; margin:10px;">Save Transaction</button>
-    <table>
-        <thead><tr><th>Date</th><th>Description</th><th>Credit</th><th>Debit</th><th>Balance</th></tr></thead>
-        <tbody id="transactionTable"></tbody>
-    </table>
-</div>
-</div>
-
-<div id="actionPopup" class="popup-overlay" onclick="closePopup()">
-    <div class="popup-content" onclick="event.stopPropagation()">
-        <h3 id="popupTitle" style="margin-top:0;">Select Action</h3>
-        <hr border="1" color="#444">
-        <div style="margin-top:20px;">
-            <button class="green" id="editBtn" style="width:100px; padding:10px;">Edit</button>
-            <button class="red" id="deleteBtn" style="width:100px; padding:10px;">Delete</button>
+    <div id="mainScreen">
+        <div class="search-container">
+            <input type="text" id="userSearch" class="search-input" placeholder="தேடவும்..." oninput="renderUsers()">
         </div>
-        <br><button style="background:#555; color:white; width:100%;" onclick="closePopup()">Close</button>
+
+        <div class="dashboard">
+            <div class="stat-box"><small>Total Users</small><h2 id="totalUsers">0</h2></div>
+            <div class="stat-box"><small>Total Balance</small><h2 id="totalBalance">0</h2></div>
+            <div class="stat-box red-border"><small style="color:#ff5252;">Red Users</small><h2 id="redUsersCount">0</h2></div>
+            <div class="stat-box red-border"><small style="color:#ff5252;">10% Collection</small><h2 id="tenPercentTotal">0</h2></div>
+        </div>
+
+        <div class="top-buttons">
+            <button class="gold" onclick="addUser()">+ New User</button>
+            <button class="gold" onclick="exportData()">Export</button>
+            <button class="gold" onclick="document.getElementById('importFile').click()">Import</button>
+            <input type="file" id="importFile" hidden onchange="importData(event)">
+        </div>
+        <div id="userList"></div>
+    </div>
+
+    <div id="userScreen" class="hidden">
+        <div class="profile-header">
+            <button class="gold" onclick="goBack()" style="float:left; padding: 5px 12px; margin-top: -5px;">← Back</button>
+            <h2 id="profName"></h2>
+            <div class="prof-details-row">
+                <p id="profMobile"></p>
+                <h3 id="profBalance"></h3>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead><tr><th>Date</th><th>Description</th><th>Cr</th><th>Db</th><th>Bal</th></tr></thead>
+                <tbody id="transactionTable"></tbody>
+            </table>
+        </div>
+
+        <button class="btn-entry" onclick="openEntryForm()">+ Entry</button>
+    </div>
+</div>
+
+<div id="entryPopup" class="popup-overlay">
+    <div class="popup-content">
+        <h3 style="color:gold; margin-top:0;">New Entry</h3>
+        <input type="date" id="tDate">
+        <input type="text" id="tDesc" placeholder="Description">
+        <input type="number" id="tCredit" placeholder="Credit">
+        <input type="number" id="tDebit" placeholder="Debit">
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <button class="gold" onclick="saveTransaction()" style="flex:1;">Save</button>
+            <button style="background:#555; color:white; flex:1;" onclick="closeEntryForm()">Close</button>
+        </div>
+    </div>
+</div>
+
+<div id="actionPopup" class="popup-overlay" onclick="closeActionPopup()">
+    <div class="popup-content" onclick="event.stopPropagation()">
+        <h3 id="popupTitle" style="color:gold;">Manage</h3>
+        <button class="gold" id="editBtn" style="width:100%;">Edit</button><br>
+        <button style="background:#e53935; color:white; width:100%; margin-top:10px;" id="deleteBtn">Delete</button><br>
+        <button style="background:#555; color:white; width:100%; margin-top:10px;" onclick="closeActionPopup()">Cancel</button>
     </div>
 </div>
 
@@ -80,88 +138,77 @@ let users = JSON.parse(localStorage.getItem("financeUsers")) || [];
 let currentUser = null;
 let editIndex = null;
 
-function saveLocal(){
-    localStorage.setItem("financeUsers", JSON.stringify(users));
+function saveLocal(){ localStorage.setItem("financeUsers", JSON.stringify(users)); }
+
+function formatDate(d){ if(!d) return ""; let p = d.split("-"); return `${p[2]}-${p[1]}-${p[0]}`; }
+
+function getBalance(u){
+    if(!u.transactions) return 0;
+    return u.transactions.reduce((a,t)=>a+(Number(t.credit||0)-Number(t.debit||0)), 0);
 }
 
-function formatDate(d){
-    if(!d) return "";
-    let parts = d.split("-");
-    return `${parts[2]}-${parts[1]}-${parts[0]}`;
-}
-
-function getBalance(user){
-    if(!user.transactions) return 0;
-    return user.transactions.reduce((a,t)=>a+(Number(t.credit||0)-Number(t.debit||0)), 0);
-}
-
-function duePending(user){
+function isRed(u) {
+    if (!u.transactions || u.transactions.length === 0) return false;
     let today = new Date().toISOString().split("T")[0];
-    return user.transactions.some(t=>t.date<=today && !t.credit && !t.debit);
+    return u.transactions.some(t => t.date <= today && !Number(t.credit) && !Number(t.debit));
 }
 
-function addLongPress(el, callback){
-    let timer;
-    const start = (e) => { timer = setTimeout(() => callback(e), 700); };
-    const cancel = () => clearTimeout(timer);
-    el.addEventListener("touchstart", start);
-    el.addEventListener("touchend", cancel);
-    el.addEventListener("mousedown", start);
-    el.addEventListener("mouseup", cancel);
+function getTenPercent(u) {
+    if(!isRed(u)) return 0;
+    let loan = u.transactions.find(t => Number(t.debit) > 0);
+    return loan ? (Number(loan.debit) * 0.10) : 0;
 }
-
-function openActionPopup(title, onEdit, onDelete) {
-    document.getElementById("popupTitle").innerText = title;
-    document.getElementById("actionPopup").style.display = "flex";
-    document.getElementById("editBtn").onclick = () => { onEdit(); closePopup(); };
-    document.getElementById("deleteBtn").onclick = () => { onDelete(); closePopup(); };
-}
-
-function closePopup() { document.getElementById("actionPopup").style.display = "none"; }
 
 function renderUsers(){
+    const search = document.getElementById("userSearch").value.toLowerCase();
+    const listDiv = document.getElementById("userList");
+    listDiv.innerHTML = "";
+
+    let totalBal = 0, redCount = 0, tenTotal = 0;
+    users.forEach(u => {
+        totalBal += getBalance(u);
+        if(isRed(u)) { redCount++; tenTotal += getTenPercent(u); }
+    });
+
     document.getElementById("totalUsers").innerText = users.length;
-    document.getElementById("totalBalance").innerText = users.reduce((a,u)=>a+getBalance(u),0);
-    const userList = document.getElementById("userList");
-    userList.innerHTML = "";
-    users.sort((a,b)=>duePending(b)-duePending(a));
-    users.forEach((u,i)=>{
-        let card=document.createElement("div");
-        card.className="user-card"+(duePending(u)?" redbg":"");
-        card.innerHTML=`<div class="row"><div><b>${u.name}</b><br><small>${u.mobile || ''}</small></div><div>₹ ${getBalance(u)}</div></div>`;
-        card.onclick=()=>openUser(i);
-        addLongPress(card,(e)=>{ e.stopPropagation(); openActionPopup(u.name, () => editUser(i), () => deleteUser(i)); });
-        userList.appendChild(card);
+    document.getElementById("totalBalance").innerText = "₹ " + totalBal.toLocaleString();
+    document.getElementById("redUsersCount").innerText = redCount;
+    document.getElementById("tenPercentTotal").innerText = "₹ " + tenTotal.toLocaleString();
+
+    let filtered = users.filter(u => u.name.toLowerCase().includes(search) || (u.mobile && u.mobile.includes(search)));
+    filtered.sort((a,b)=> isRed(b) - isRed(a));
+
+    filtered.forEach((u)=>{
+        let realIdx = users.indexOf(u);
+        let card = document.createElement("div");
+        card.className = "user-card" + (isRed(u) ? " redbg" : "");
+        
+        // கார்டில் கிளிக் செய்தால் யூசர் ப்ரொஃபைல் ஓபன் ஆகும்
+        card.onclick = () => openUser(realIdx);
+        
+        card.innerHTML = `
+            <div class="row">
+                <div>
+                    <b>${u.name}</b><br>
+                    <small style="font-size:14px;">${u.mobile || ''}</small>
+                </div>
+                <div style="font-weight:bold;">₹ ${getBalance(u).toLocaleString()}</div>
+            </div>
+            <button class="menu-dot-btn" onclick="triggerActionMenu(event, ${realIdx}, '${u.name}')">&#8942;</button>
+        `;
+        
+        listDiv.appendChild(card);
     });
 }
 
-function addUser(){
-    let name=prompt("User Name");
-    let mobile=prompt("Mobile");
-    if(name){
-        users.push({name,mobile,transactions:[]});
-        saveLocal();
-        renderUsers();
-    }
-}
-
-function editUser(i){
-    users[i].name=prompt("Edit Name",users[i].name)||users[i].name;
-    users[i].mobile=prompt("Edit Mobile",users[i].mobile)||users[i].mobile;
-    saveLocal();
-    renderUsers();
-}
-
-function deleteUser(i){
-    if(confirm("Delete user?")){
-        users.splice(i,1);
-        saveLocal();
-        renderUsers();
-    }
+// கார்டில் இருக்கும் 3 புள்ளிகளை அழுத்தும்போது இந்த ஃபங்க்ஷன் இயங்கும்
+function triggerActionMenu(event, realIdx, name) {
+    event.stopPropagation(); // இது கார்டின் மெயின் கிளிக்கை தடுக்கும்
+    openActionPopup(name, () => editUser(realIdx), () => deleteUser(realIdx));
 }
 
 function openUser(i){
-    currentUser=i;
+    currentUser = i;
     document.getElementById("mainScreen").classList.add("hidden");
     document.getElementById("userScreen").classList.remove("hidden");
     renderTransactions();
@@ -173,68 +220,61 @@ function goBack(){
     renderUsers();
 }
 
+function openEntryForm(){ 
+    document.getElementById("tDate").value = new Date().toISOString().split("T")[0];
+    document.getElementById("entryPopup").style.display = "flex"; 
+}
+function closeEntryForm(){ document.getElementById("entryPopup").style.display = "none"; editIndex = null; }
+
 function saveTransaction(){
-    let dateVal = document.getElementById("tDate").value;
-    let descVal = document.getElementById("tDesc").value;
-    let creditVal = document.getElementById("tCredit").value;
-    let debitVal = document.getElementById("tDebit").value;
+    let d = document.getElementById("tDate").value, desc = document.getElementById("tDesc").value;
+    let c = document.getElementById("tCredit").value, deb = document.getElementById("tDebit").value;
+    if(!d) return alert("Date is required!");
 
-    if(!dateVal) { alert("தேதியைத் தேர்ந்தெடுக்கவும்!"); return; }
+    let tx = { date: d, desc: desc, credit: c, debit: deb };
+    if(editIndex === null) users[currentUser].transactions.push(tx);
+    else { users[currentUser].transactions[editIndex] = tx; editIndex = null; }
 
-    let tx = { date: dateVal, desc: descVal, credit: creditVal, debit: debitVal };
-
-    if(editIndex === null) {
-        users[currentUser].transactions.push(tx);
-    } else {
-        users[currentUser].transactions[editIndex] = tx;
-        editIndex = null;
-    }
-
-    document.getElementById("tDate").value = "";
-    document.getElementById("tDesc").value = "";
-    document.getElementById("tCredit").value = "";
-    document.getElementById("tDebit").value = "";
-    
     saveLocal();
+    closeEntryForm();
     renderTransactions();
 }
 
 function renderTransactions(){
-    let user = users[currentUser];
+    let u = users[currentUser];
+    u.transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
     
-    // தேதியை வரிசைப்படுத்துதல் (Newest first)
-    user.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    document.getElementById("userTitle").innerText = `${user.name} | ₹${getBalance(user)}`;
+    document.getElementById("profName").innerText = u.name;
+    document.getElementById("profMobile").innerText = u.mobile || "No Mobile";
+    document.getElementById("profBalance").innerText = "Bal: ₹" + getBalance(u).toLocaleString();
+    
     const tableBody = document.getElementById("transactionTable");
     tableBody.innerHTML = "";
     
-    // Balance கணக்கிட பழைய தேதியில் இருந்து வரிசைப்படுத்த வேண்டும்
-    let sortedForCalc = [...user.transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
-    let runningBalances = [];
-    let currentBal = 0;
-    sortedForCalc.forEach(tx => {
-        currentBal += (Number(tx.credit || 0) - Number(tx.debit || 0));
-        runningBalances.push({ ...tx, cumulative: currentBal });
+    let curBal = 0, display = [];
+    u.transactions.forEach(tx => {
+        let isNote = (!Number(tx.credit) && !Number(tx.debit));
+        if(!isNote) curBal += (Number(tx.credit||0) - Number(tx.debit||0));
+        display.push({ ...tx, cumulative: isNote ? "" : curBal });
     });
 
-    // சமீபத்திய தேதி முதலில் இருக்குமாறு திரையில் காட்டுதல்
-    runningBalances.reverse().forEach((tx, idx) => {
-        let originalIndex = user.transactions.indexOf(user.transactions.find(t => t === tx));
+    display.reverse().forEach((tx) => {
         let row = document.createElement("tr");
-        row.className = tx.credit ? "credit-row" : tx.debit ? "debit-row" : "";
+        if(Number(tx.credit) > 0) row.className = "credit-row";
+        else if(Number(tx.debit) > 0) row.className = "debit-row";
+        else row.className = "pending-row";
+
+        row.innerHTML = `<td>${formatDate(tx.date)}</td>
+                         <td>${tx.desc||""}</td>
+                         <td>${tx.credit||""}</td>
+                         <td>${tx.debit||""}</td>
+                         <td><b>${tx.cumulative}</b></td>`;
         
-        row.innerHTML = `<td>${formatDate(tx.date)}</td><td>${tx.desc||""}</td><td>${tx.credit||""}</td><td>${tx.debit||""}</td><td>${tx.cumulative}</td>`;
-        
-        addLongPress(row, (e) => { 
-            openActionPopup("Transaction", () => {
-                let realIdx = user.transactions.findIndex(t => t.date === tx.date && t.desc === tx.desc && t.credit === tx.credit);
-                editTransaction(realIdx);
-            }, () => {
-                let realIdx = user.transactions.findIndex(t => t.date === tx.date && t.desc === tx.desc && t.credit === tx.credit);
-                deleteTransaction(realIdx);
-            }); 
-        });
+        // ட்ரான்ஸாக்ஷன் டேபிளில் லாங் பிரஸ் செய்வதற்கு பதிலாக டபுள் கிளிக் (Double Click) மாற்றப்பட்டுள்ளது (மொபைலிலும் வேலை செய்யும்)
+        row.ondblclick = (e) => { 
+            let idx = u.transactions.findIndex(t => t.date===tx.date && t.desc===tx.desc && t.credit===tx.credit && t.debit===tx.debit);
+            openActionPopup("Entry", () => editTransaction(idx), () => deleteTransaction(idx)); 
+        };
         tableBody.appendChild(row);
     });
 }
@@ -246,34 +286,50 @@ function editTransaction(i){
     document.getElementById("tCredit").value = tx.credit;
     document.getElementById("tDebit").value = tx.debit;
     editIndex = i;
+    closeActionPopup();
+    document.getElementById("entryPopup").style.display = "flex";
 }
 
-function deleteTransaction(i){
-    if(confirm("Delete this?")){
-        users[currentUser].transactions.splice(i,1);
-        saveLocal();
-        renderTransactions();
-    }
+function deleteTransaction(i){ if(confirm("Delete?")){ users[currentUser].transactions.splice(i,1); saveLocal(); renderTransactions(); closeActionPopup(); } }
+
+function addUser(){
+    let n=prompt("Name:"), m=prompt("Mobile:");
+    if(n){ users.push({name:n,mobile:m,transactions:[]}); saveLocal(); renderUsers(); }
 }
+function editUser(i){
+    let currentName = users[i].name;
+    let currentMobile = users[i].mobile;
+    let newName = prompt("Name:", currentName);
+    let newMobile = prompt("Mobile:", currentMobile);
+    
+    if(newName !== null) users[i].name = newName;
+    if(newMobile !== null) users[i].mobile = newMobile;
+    
+    saveLocal(); 
+    closeActionPopup();
+    renderUsers();
+}
+function deleteUser(i){ if(confirm("Delete User?")){ users.splice(i,1); saveLocal(); renderUsers(); closeActionPopup(); } }
+
+function openActionPopup(title, onEdit, onDelete) {
+    document.getElementById("popupTitle").innerText = title;
+    document.getElementById("actionPopup").style.display = "flex";
+    document.getElementById("editBtn").onclick = onEdit;
+    document.getElementById("deleteBtn").onclick = onDelete;
+}
+function closeActionPopup() { document.getElementById("actionPopup").style.display = "none"; }
 
 function exportData(){
-    let data="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(users));
     let a=document.createElement("a");
-    a.href=data; a.download="finance_backup.json"; a.click();
+    a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(users));
+    a.download="Finance_Backup_2026.json"; a.click();
 }
 
 function importData(event){
-    let file=event.target.files[0];
-    if(!file) return;
-    let reader=new FileReader();
-    reader.onload=function(e){
-        try {
-            users=JSON.parse(e.target.result);
-            saveLocal();
-            renderUsers();
-        } catch(err) { alert("Error reading file!"); }
-    };
-    reader.readAsText(file);
+    let f=event.target.files[0]; if(!f) return;
+    let r=new FileReader();
+    r.onload=function(e){ users=JSON.parse(e.target.result); saveLocal(); renderUsers(); };
+    r.readAsText(f);
 }
 
 renderUsers();
