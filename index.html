@@ -14,10 +14,10 @@ header{background:linear-gradient(145deg,#ffd700,#b8860b);color:#111;text-align:
 .stat-box{background:#222;padding:20px 10px;border-radius:10px;text-align:center;border:1px solid #333;}
 .stat-box.red-border{border: 2px solid #e53935;}
 
-/* தலைப்புகள் (Total Users, etc.) */
+/* தலைப்புகள் */
 .stat-box small{color: #aaa; font-size: 14px; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 8px;}
 
-/* எண்கள் (16, ₹ 1,34,500, etc.) */
+/* எண்கள் */
 .stat-box h2{margin:0; font-size: 24px; color: #ffd700; font-weight: 900;}
 
 .search-container{padding:10px;}
@@ -46,12 +46,15 @@ button{padding:12px 18px;border:none;border-radius:8px;margin:4px;cursor:pointer
 /* Transaction Table */
 .table-container{overflow-x:auto; padding:10px;}
 table{width:100%;border-collapse:collapse; background: #1a1a1a; border-radius: 10px;}
-th,td{padding:12px 8px;text-align:center; border-bottom: 1px solid #444; font-size: 15px;}
+th,td{padding:12px 6px;text-align:center; border-bottom: 1px solid #444; font-size: 14px;}
 th{background:#333; color: #ffd700;}
 
 .credit-row{background-color: #1f7a1f !important; color: white !important;}
 .debit-row{background-color: #b91c1c !important; color: white !important;}
 .pending-row{background-color: #2c2c2c; color: #ffd700;}
+
+/* Action Buttons inside Table */
+.action-icon { background: none; border: none; font-size: 16px; cursor: pointer; padding: 2px 5px; margin: 0 2px; display: inline-block; }
 
 /* Popup / Entry Form */
 .popup-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:1000;justify-content:center;align-items:center;}
@@ -101,7 +104,7 @@ input[type="date"], input[type="text"], input[type="number"]{width:100%;margin:1
 
         <div class="table-container">
             <table>
-                <thead><tr><th>Date</th><th>Description</th><th>Cr</th><th>Db</th><th>Bal</th></tr></thead>
+                <thead><tr><th>Date</th><th>Desc</th><th>Cr</th><th>Db</th><th>Bal</th><th>Action</th></tr></thead>
                 <tbody id="transactionTable"></tbody>
             </table>
         </div>
@@ -183,7 +186,6 @@ function renderUsers(){
         let card = document.createElement("div");
         card.className = "user-card" + (isRed(u) ? " redbg" : "");
         
-        // கார்டில் கிளிக் செய்தால் யூசர் ப்ரொஃபைல் ஓபன் ஆகும்
         card.onclick = () => openUser(realIdx);
         
         card.innerHTML = `
@@ -201,9 +203,8 @@ function renderUsers(){
     });
 }
 
-// கார்டில் இருக்கும் 3 புள்ளிகளை அழுத்தும்போது இந்த ஃபங்க்ஷன் இயங்கும்
 function triggerActionMenu(event, realIdx, name) {
-    event.stopPropagation(); // இது கார்டின் மெயின் கிளிக்கை தடுக்கும்
+    event.stopPropagation();
     openActionPopup(name, () => editUser(realIdx), () => deleteUser(realIdx));
 }
 
@@ -222,6 +223,10 @@ function goBack(){
 
 function openEntryForm(){ 
     document.getElementById("tDate").value = new Date().toISOString().split("T")[0];
+    document.getElementById("tDesc").value = "";
+    document.getElementById("tCredit").value = "";
+    document.getElementById("tDebit").value = "";
+    editIndex = null;
     document.getElementById("entryPopup").style.display = "flex"; 
 }
 function closeEntryForm(){ document.getElementById("entryPopup").style.display = "none"; editIndex = null; }
@@ -232,8 +237,12 @@ function saveTransaction(){
     if(!d) return alert("Date is required!");
 
     let tx = { date: d, desc: desc, credit: c, debit: deb };
-    if(editIndex === null) users[currentUser].transactions.push(tx);
-    else { users[currentUser].transactions[editIndex] = tx; editIndex = null; }
+    if(editIndex === null) {
+        users[currentUser].transactions.push(tx);
+    } else {
+        users[currentUser].transactions[editIndex] = tx; 
+        editIndex = null; 
+    }
 
     saveLocal();
     closeEntryForm();
@@ -242,6 +251,7 @@ function saveTransaction(){
 
 function renderTransactions(){
     let u = users[currentUser];
+    // அசல் வரிசை மாறாமல் இருக்க தேதியின் அடிப்படையில் முதலில் சார்ட் செய்துகொள்கிறோம்
     u.transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
     
     document.getElementById("profName").innerText = u.name;
@@ -252,12 +262,14 @@ function renderTransactions(){
     tableBody.innerHTML = "";
     
     let curBal = 0, display = [];
-    u.transactions.forEach(tx => {
+    u.transactions.forEach((tx, originalIndex) => {
         let isNote = (!Number(tx.credit) && !Number(tx.debit));
         if(!isNote) curBal += (Number(tx.credit||0) - Number(tx.debit||0));
-        display.push({ ...tx, cumulative: isNote ? "" : curBal });
+        // அசல் இண்டெக்ஸை (originalIndex) பத்திரமாக சேமிக்கிறோம்
+        display.push({ ...tx, cumulative: isNote ? "" : curBal, actualIdx: originalIndex });
     });
 
+    // புதிய எண்ட்ரி மேலே வர reverse செய்கிறோம்
     display.reverse().forEach((tx) => {
         let row = document.createElement("tr");
         if(Number(tx.credit) > 0) row.className = "credit-row";
@@ -268,13 +280,12 @@ function renderTransactions(){
                          <td>${tx.desc||""}</td>
                          <td>${tx.credit||""}</td>
                          <td>${tx.debit||""}</td>
-                         <td><b>${tx.cumulative}</b></td>`;
+                         <td><b>${tx.cumulative}</b></td>
+                         <td>
+                            <button class="action-icon" onclick="editTransaction(${tx.actualIdx})">✏️</button>
+                            <button class="action-icon" onclick="deleteTransaction(${tx.actualIdx})">🗑️</button>
+                         </td>`;
         
-        // ட்ரான்ஸாக்ஷன் டேபிளில் லாங் பிரஸ் செய்வதற்கு பதிலாக டபுள் கிளிக் (Double Click) மாற்றப்பட்டுள்ளது (மொபைலிலும் வேலை செய்யும்)
-        row.ondblclick = (e) => { 
-            let idx = u.transactions.findIndex(t => t.date===tx.date && t.desc===tx.desc && t.credit===tx.credit && t.debit===tx.debit);
-            openActionPopup("Entry", () => editTransaction(idx), () => deleteTransaction(idx)); 
-        };
         tableBody.appendChild(row);
     });
 }
@@ -282,15 +293,20 @@ function renderTransactions(){
 function editTransaction(i){
     let tx = users[currentUser].transactions[i];
     document.getElementById("tDate").value = tx.date;
-    document.getElementById("tDesc").value = tx.desc;
-    document.getElementById("tCredit").value = tx.credit;
-    document.getElementById("tDebit").value = tx.debit;
-    editIndex = i;
-    closeActionPopup();
+    document.getElementById("tDesc").value = tx.desc || "";
+    document.getElementById("tCredit").value = tx.credit || "";
+    document.getElementById("tDebit").value = tx.debit || "";
+    editIndex = i; // சரியான அசல் இண்டெக்ஸ் லாக் செய்யப்படுகிறது
     document.getElementById("entryPopup").style.display = "flex";
 }
 
-function deleteTransaction(i){ if(confirm("Delete?")){ users[currentUser].transactions.splice(i,1); saveLocal(); renderTransactions(); closeActionPopup(); } }
+function deleteTransaction(i){ 
+    if(confirm("இந்த எண்ட்ரியை நீக்கவா?")){ 
+        users[currentUser].transactions.splice(i,1); 
+        saveLocal(); 
+        renderTransactions(); 
+    } 
+}
 
 function addUser(){
     let n=prompt("Name:"), m=prompt("Mobile:");
